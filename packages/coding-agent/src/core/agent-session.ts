@@ -494,14 +494,7 @@ export class AgentSession {
 	private _sessionStartEvent: SessionStartEvent;
 	private _extensionUIContext?: ExtensionUIContext;
 	private _extensionMode: ExtensionMode = "print";
-	/**
-	 * True once dispose() runs (including when this session is being replaced by
-	 * newSession / switchSession / fork / reload). A disposed session must not start
-	 * new runs: it is no longer rendered or persisted, so any prompt accepted here
-	 * would be lost. Set before the replacement's session_shutdown handlers await, so
-	 * a prompt arriving during that window is rejected instead of running on the
-	 * outgoing session (#12243).
-	 */
+	/** Set before a replacement's shutdown handlers await, so input arriving in that window is rejected (#12243). */
 	private _disposed = false;
 	private _extensionCommandContextActions?: ExtensionCommandContextActions;
 	private _extensionAbortHandler?: () => void;
@@ -1483,17 +1476,11 @@ export class AgentSession {
 		}
 	}
 
-	/** Whether this session has been disposed (or is being replaced) and must not start new runs. */
 	get isDisposed(): boolean {
 		return this._disposed;
 	}
 
-	/**
-	 * Mark this session as no longer accepting new input, without running the full
-	 * dispose teardown. Called by the runtime before a replacement's session_shutdown
-	 * handlers await, so a prompt arriving during that window is rejected instead of
-	 * running on the outgoing session (#12243).
-	 */
+	/** Stop accepting new input without running the dispose teardown. */
 	beginSessionReplacement(): void {
 		this._disposed = true;
 	}
@@ -1981,8 +1968,7 @@ export class AgentSession {
 	 * @param onStarted Called once the run's messages are prepared, before the first request.
 	 */
 	private async _startRun(trigger: BeforeAgentStartTrigger, onStarted?: () => void): Promise<void> {
-		// The session may have begun replacement while this prompt awaited input
-		// handlers during preflight; never start a run on an outgoing session (#12243).
+		// Preflight may have awaited across the start of a replacement (#12243).
 		if (this._disposed) {
 			throw new Error(
 				"This session has been disposed or replaced. Do not send a prompt to a captured session after ctx.newSession(), ctx.fork(), ctx.switchSession(), or ctx.reload(). Use the session passed to withSession instead.",
