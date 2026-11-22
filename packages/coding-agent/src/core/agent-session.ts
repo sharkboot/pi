@@ -494,7 +494,6 @@ export class AgentSession {
 	private _sessionStartEvent: SessionStartEvent;
 	private _extensionUIContext?: ExtensionUIContext;
 	private _extensionMode: ExtensionMode = "print";
-	/** Set before a replacement's shutdown handlers await, so input arriving in that window is rejected (#12243). */
 	private _disposed = false;
 	private _extensionCommandContextActions?: ExtensionCommandContextActions;
 	private _extensionAbortHandler?: () => void;
